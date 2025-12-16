@@ -1,7 +1,8 @@
 
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-pages';
-import * as XLSX from 'xlsx';
+// 显式引入 ESM 版本，避开 CommonJS 的动态 require 问题
+import * as XLSX from 'xlsx/xlsx.mjs';
 import JSZip from 'jszip';
 
 // 定义环境变量类型
@@ -35,7 +36,6 @@ app.post('/process', async (c) => {
   const authHeader = c.req.header('Authorization');
   const correctPassword = c.env.AUTH_PASSWORD || "admin";
   
-  // 前端发送格式为 "Bearer 密码"
   if (!authHeader || authHeader !== `Bearer ${correctPassword}`) {
     return c.json({ error: 'Unauthorized: Invalid Password' }, 401);
   }
@@ -53,7 +53,6 @@ app.post('/process', async (c) => {
       return c.json({ error: 'Missing files' }, 400);
     }
 
-    // 确保 targetFiles 是数组
     if (!Array.isArray(targetFiles)) {
       targetFiles = [targetFiles];
     }
@@ -129,16 +128,13 @@ app.post('/process', async (c) => {
         reportLines.push(`File: ${fileName} | Sheet: ${sheetName} | Replaced: ${sheetReplacements}`);
       }
 
-      // 将修改后的 Excel 写入 Buffer 并添加到 ZIP
       const outBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       zip.file(`replaced_${fileName}`, outBuffer);
     }
 
-    // 添加报告文件
     const reportContent = reportLines.join('\n');
     zip.file('report.txt', reportContent);
 
-    // 生成最终 ZIP
     const zipContent = await zip.generateAsync({ type: 'blob' });
     const arrayBuffer = await zipContent.arrayBuffer();
 
@@ -154,7 +150,6 @@ app.post('/process', async (c) => {
   }
 });
 
-// --- 3. 静态文件服务 (必须放在最后) ---
 app.use('/*', serveStatic({ root: './public' }));
 
 export default app;

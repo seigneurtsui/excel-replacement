@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "wrangler pages dev public",
-    "build": "esbuild src/index.ts --bundle --outfile=public/_worker.js --format=esm --platform=node --target=esnext --external:stream --external:fs --external:path --external:crypto --external:buffer --external:util --external:events",
+    "build": "esbuild src/index.ts --bundle --outfile=public/_worker.js --format=esm --platform=node --target=esnext",
     "deploy": "npm run build && wrangler pages deploy public"
   },
   "dependencies": {
