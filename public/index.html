@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Batch Replacer</title>
+    <style>
+        :root { --primary-color: #007bff; --bg-color: #f4f4f9; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: var(--bg-color); }
+        
+        /* 顶部栏 */
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .lang-selector { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+
+        .upload-area { border: 2px dashed #ccc; padding: 30px; text-align: center; margin-bottom: 20px; cursor: pointer; background: white; border-radius: 8px; transition: 0.3s; }
+        .upload-area:hover { border-color: var(--primary-color); background: #eef7ff; }
+        .upload-area p { margin: 5px 0; color: #666; }
+        .icon-large { font-size: 40px; margin-bottom: 10px; display: block; }
+        
+        .file-list { margin-top: 10px; }
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: white; margin-bottom: 5px; border-radius: 4px; border: 1px solid #eee; }
+        .delete-btn { color: #dc3545; cursor: pointer; font-weight: bold; }
+        
+        button#start-process { width: 100%; padding: 15px; background: var(--primary-color); color: white; border: none; font-size: 16px; border-radius: 5px; cursor: pointer; transition: background 0.2s; }
+        button#start-process:hover { background: #0056b3; }
+        button#start-process:disabled { background: #ccc; cursor: not-allowed; }
+
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 10px; vertical-align: middle; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #report-section { margin-top: 30px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; }
+        #report-content { max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1 data-i18n="title">Excel Batch Replacer</h1>
+        <select id="language-select" class="lang-selector">
+            <option value="zh-CN">简体中文</option>
+            <option value="zh-TW">繁體中文</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="pt">Português</option>
+            <option value="it">Italiano</option>
+            <option value="de">Deutsch</option>
+            <option value="ru">Русский</option>
+            <option value="ja">日本語</option>
+        </select>
+    </div>
+
+    <p data-i18n="subtitle">Efficiently batch replace text in multiple Excel files.</p>
+
+    <section>
+        <h2 data-i18n="target_files">Target Excel Files</h2>
+        <div id="target-upload" class="upload-area">
+            <span class="icon-large">📁</span>
+            <p data-i18n="drag_drop">Click or drag & drop files here</p>
+            <p data-i18n="formats">Supports .xls and .xlsx</p>
+        </div>
+        <div id="target-files" class="file-list"></div>
+    </section>
+
+    <section>
+        <h2 data-i18n="replacement_map">Replacement Map</h2>
+        <div id="replacement-upload" class="upload-area">
+            <span class="icon-large">📋</span>
+            <p data-i18n="drag_drop_map">Click or drag & drop the map file</p>
+            <p data-i18n="map_format">Format: Col A (Find), Col B (Replace)</p>
+        </div>
+        <div id="replacement-file" class="file-list"></div>
+    </section>
+
+    <section>
+        <h2 data-i18n="mode">Match Mode</h2>
+        <label>
+            <input type="radio" name="match-mode" value="full" checked>
+            <span data-i18n="mode_full">Full Match (Exact Cell Content)</span>
+        </label>
+        <br><br>
+        <label>
+            <input type="radio" name="match-mode" value="partial">
+            <span data-i18n="mode_partial">Partial Match (Contains Keyword)</span>
+        </label>
+    </section>
+    
+    <br>
+
+    <button id="start-process">
+        <span class="spinner"></span>
+        <span data-i18n="btn_start">Start Processing</span>
+    </button>
+
+    <section id="report-section">
+        <h2 data-i18n="report_title">Processing Report</h2>
+        <div id="report-content"></div>
+        <p data-i18n="download_tip">The processed files and full report have been downloaded as a ZIP file.</p>
+    </section>
+
+    <script>
+        // --- i18n Dictionary ---
+        const translations = {
+            'zh-CN': {
+                title: "Excel批量字符替换工具", subtitle: "高效批量处理Excel文档中的字符替换任务",
+                target_files: "目标Excel文档", drag_drop: "点击或拖拽上传文件", formats: "支持 .xls 和 .xlsx",
+                replacement_map: "替换对照表", drag_drop_map: "点击或拖拽上传对照表文件", map_format: "格式：A列(查找)，B列(替换)",
+                mode: "匹配模式", mode_full: "完全匹配 - 单元格内容完全相等", mode_partial: "部分匹配 - 包含关键字即替换",
+                btn_start: "开始替换", btn_processing: "处理中...",
+                report_title: "处理报告", download_tip: "处理后的文件和完整报告已打包下载。",
+                alert_missing: "请上传目标文件和对照表", alert_error: "处理失败: "
+            },
+            'zh-TW': {
+                title: "Excel批量字符替換工具", subtitle: "高效批量處理Excel文檔中的字符替換任務",
+                target_files: "目標Excel文檔", drag_drop: "點擊或拖拽上傳文件", formats: "支持 .xls 和 .xlsx",
+                replacement_map: "替換對照表", drag_drop_map: "點擊或拖拽上傳對照表文件", map_format: "格式：A列(查找)，B列(替換)",
+                mode: "匹配模式", mode_full: "完全匹配 - 單元格內容完全相等", mode_partial: "部分匹配 - 包含關鍵字即替換",
+                btn_start: "開始替換", btn_processing: "處理中...",
+                report_title: "處理報告", download_tip: "處理後的文件和完整報告已打包下載。",
+                alert_missing: "請上傳目標文件和對照表", alert_error: "處理失敗: "
+            },
+            'en': {
+                title: "Excel Batch Replacer", subtitle: "Efficiently batch replace text in multiple Excel files.",
+                target_files: "Target Excel Files", drag_drop: "Click or drag & drop files here", formats: "Supports .xls and .xlsx",
+                replacement_map: "Replacement Map", drag_drop_map: "Click or drag & drop the map file", map_format: "Format: Col A (Find), Col B (Replace)",
+                mode: "Match Mode", mode_full: "Full Match (Exact Cell Content)", mode_partial: "Partial Match (Contains Keyword)",
+                btn_start: "Start Processing", btn_processing: "Processing...",
+                report_title: "Processing Report", download_tip: "The processed files and full report have been downloaded as a ZIP file.",
+                alert_missing: "Please upload target files and replacement map", alert_error: "Error: "
+            },
+            'fr': {
+                title: "Remplacement Excel par Lots", subtitle: "Remplacez efficacement du texte dans plusieurs fichiers Excel.",
+                target_files: "Fichiers Excel Cibles", drag_drop: "Cliquez ou glissez-déposez ici", formats: "Supporte .xls et .xlsx",
+                replacement_map: "Table de Correspondance", drag_drop_map: "Cliquez ou glissez-déposez le fichier", map_format: "Format: Col A (Recherche), Col B (Remplacement)",
+                mode: "Mode de Correspondance", mode_full: "Correspondance Exacte", mode_partial: "Correspondance Partielle",
+                btn_start: "Commencer", btn_processing: "Traitement...",
+                report_title: "Rapport", download_tip: "Les fichiers traités ont été téléchargés sous forme d'archive ZIP.",
+                alert_missing: "Veuillez télécharger les fichiers cibles et la carte", alert_error: "Erreur: "
+            },
+            'es': {
+                title: "Reemplazo por Lotes de Excel", subtitle: "Reemplace texto en múltiples archivos Excel eficientemente.",
+                target_files: "Archivos Excel Objetivo", drag_drop: "Haga clic o arrastre archivos aquí", formats: "Soporta .xls y .xlsx",
+                replacement_map: "Mapa de Reemplazo", drag_drop_map: "Haga clic o arrastre el archivo de mapa", map_format: "Formato: Col A (Buscar), Col B (Reemplazar)",
+                mode: "Modo de Coincidencia", mode_full: "Coincidencia Exacta", mode_partial: "Coincidencia Parcial",
+                btn_start: "Iniciar Proceso", btn_processing: "Procesando...",
+                report_title: "Informe", download_tip: "Los archivos procesados se han descargado como un archivo ZIP.",
+                alert_missing: "Cargue los archivos de destino y el mapa", alert_error: "Error: "
+            },
+            'pt': {
+                title: "Substituição em Lote Excel", subtitle: "Substitua texto em vários arquivos Excel com eficiência.",
+                target_files: "Arquivos Excel Alvo", drag_drop: "Clique ou arraste arquivos aqui", formats: "Suporta .xls e .xlsx",
+                replacement_map: "Mapa de Substituição", drag_drop_map: "Clique ou arraste o arquivo de mapa", map_format: "Formato: Col A (Localizar), Col B (Substituir)",
+                mode: "Modo de Correspondência", mode_full: "Correspondência Exata", mode_partial: "Correspondência Parcial",
+                btn_start: "Iniciar Processo", btn_processing: "Processando...",
+                report_title: "Relatório", download_tip: "Os arquivos processados foram baixados como um arquivo ZIP.",
+                alert_missing: "Faça upload dos arquivos de destino e do mapa", alert_error: "Erro: "
+            },
+            'it': {
+                title: "Sostituzione Batch Excel", subtitle: "Sostituisci testo in più file Excel in modo efficiente.",
+                target_files: "File Excel di Destinazione", drag_drop: "Clicca o trascina i file qui", formats: "Supporta .xls e .xlsx",
+                replacement_map: "Mappa di Sostituzione", drag_drop_map: "Clicca o trascina il file mappa", map_format: "Formato: Col A (Trova), Col B (Sostituisci)",
+                mode: "Modalità Corrispondenza", mode_full: "Corrispondenza Esatta", mode_partial: "Corrispondenza Parziale",
+                btn_start: "Inizia Processo", btn_processing: "Elaborazione...",
+                report_title: "Rapporto", download_tip: "I file elaborati sono stati scaricati come file ZIP.",
+                alert_missing: "Carica i file di destinazione e la mappa", alert_error: "Errore: "
+            },
+            'de': {
+                title: "Excel Batch Ersetzen", subtitle: "Ersetzen Sie Text in mehreren Excel-Dateien effizient.",
+                target_files: "Ziel-Excel-Dateien", drag_drop: "Klicken oder Dateien hierher ziehen", formats: "Unterstützt .xls und .xlsx",
+                replacement_map: "Ersetzungstabelle", drag_drop_map: "Klicken oder Tabellendatei hierher ziehen", map_format: "Format: Spalte A (Suchen), Spalte B (Ersetzen)",
+                mode: "Übereinstimmungsmodus", mode_full: "Genaue Übereinstimmung", mode_partial: "Teilweise Übereinstimmung",
+                btn_start: "Starten", btn_processing: "Verarbeitung...",
+                report_title: "Bericht", download_tip: "Die verarbeiteten Dateien wurden als ZIP heruntergeladen.",
+                alert_missing: "Bitte laden Sie Zieldateien und Karte hoch", alert_error: "Fehler: "
+            },
+            'ru': {
+                title: "Пакетная замена в Excel", subtitle: "Эффективная замена текста в нескольких файлах Excel.",
+                target_files: "Целевые файлы Excel", drag_drop: "Нажмите или перетащите файлы сюда", formats: "Поддерживает .xls и .xlsx",
+                replacement_map: "Таблица замен", drag_drop_map: "Нажмите или перетащите файл таблицы", map_format: "Формат: Столбец A (Найти), Столбец B (Заменить)",
+                mode: "Режим совпадения", mode_full: "Полное совпадение", mode_partial: "Частичное совпадение",
+                btn_start: "Начать", btn_processing: "Обработка...",
+                report_title: "Отчет", download_tip: "Обработанные файлы были загружены как ZIP-архив.",
+                alert_missing: "Пожалуйста, загрузите целевые файлы и карту", alert_error: "Ошибка: "
+            },
+            'ja': {
+                title: "Excel一括置換ツール", subtitle: "複数のExcelファイル内のテキストを効率的に一括置換します。",
+                target_files: "対象Excelファイル", drag_drop: "ここをクリックするかファイルをドロップ", formats: ".xls および .xlsx をサポート",
+                replacement_map: "置換対応表", drag_drop_map: "ここをクリックするか対応表をドロップ", map_format: "形式: A列(検索), B列(置換)",
+                mode: "一致モード", mode_full: "完全一致（セル内容が完全に一致）", mode_partial: "部分一致（キーワードを含む）",
+                btn_start: "処理開始", btn_processing: "処理中...",
+                report_title: "処理レポート", download_tip: "処理済みファイルとレポートがZIP形式でダウンロードされました。",
+                alert_missing: "対象ファイルと対応表をアップロードしてください", alert_error: "エラー: "
+            }
+        };
+
+        // --- Logic ---
+        let targetFiles = [];
+        let replacementFile = null;
+        let currentLang = localStorage.getItem('app_lang') || 'zh-CN';
+
+        // Initialize Language
+        document.getElementById('language-select').value = currentLang;
+        updateLanguage(currentLang);
+
+        document.getElementById('language-select').addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            localStorage.setItem('app_lang', currentLang);
+            updateLanguage(currentLang);
+        });
+
+        function updateLanguage(lang) {
+            const t = translations[lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            // Update button text explicitly if not processing
+            const btn = document.getElementById('start-process');
+            if (!btn.disabled) {
+                const span = btn.querySelector('[data-i18n="btn_start"]');
+                if(span) span.textContent = t['btn_start'];
+            }
+        }
+
+        // File Handling
+        const setupUpload = (id, type) => {
+            const el = document.getElementById(id);
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xls,.xlsx';
+            input.multiple = (type === 'target');
+            
+            el.addEventListener('click', () => input.click());
+            el.addEventListener('dragover', e => { e.preventDefault(); el.style.background = '#eef7ff'; });
+            el.addEventListener('dragleave', e => { e.preventDefault(); el.style.background = 'white'; });
+            el.addEventListener('drop', e => {
+                e.preventDefault();
+                el.style.background = 'white';
+                handleFiles(e.dataTransfer.files, type);
+            });
+            input.onchange = e => handleFiles(e.target.files, type);
+        };
+
+        setupUpload('target-upload', 'target');
+        setupUpload('replacement-upload', 'replacement');
+
+        function handleFiles(files, type) {
+            Array.from(files).forEach(file => {
+                if (!file.name.match(/\.xls(x)?$/)) return;
+                if (type === 'target') targetFiles.push(file);
+                else replacementFile = file;
+            });
+            renderFiles();
+        }
+
+        function renderFiles() {
+            const tList = document.getElementById('target-files');
+            tList.innerHTML = '';
+            targetFiles.forEach((f, i) => {
+                tList.innerHTML += `<div class="file-item"><span>${f.name}</span><span class="delete-btn" onclick="del('target', ${i})">×</span></div>`;
+            });
+
+            const rList = document.getElementById('replacement-file');
+            rList.innerHTML = '';
+            if (replacementFile) {
+                rList.innerHTML = `<div class="file-item"><span>${replacementFile.name}</span><span class="delete-btn" onclick="del('rep')">×</span></div>`;
+            }
+        }
+
+        window.del = (type, i) => {
+            if (type === 'target') targetFiles.splice(i, 1);
+            else replacementFile = null;
+            renderFiles();
+        };
+
+        // Processing
+        document.getElementById('start-process').addEventListener('click', async () => {
+            const t = translations[currentLang];
+            if (targetFiles.length === 0 || !replacementFile) {
+                alert(t.alert_missing);
+                return;
+            }
+
+            const btn = document.getElementById('start-process');
+            const spinner = btn.querySelector('.spinner');
+            const btnText = btn.querySelector('span[data-i18n]');
+            
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = t.btn_processing;
+            document.getElementById('report-section').style.display = 'none';
+
+            const formData = new FormData();
+            targetFiles.forEach(f => formData.append('targets', f));
+            formData.append('replacement', replacementFile);
+            formData.append('mode', document.querySelector('input[name="match-mode"]:checked').value);
+
+            try {
+                const res = await fetch('/process', { method: 'POST', body: formData });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Server Error');
+                }
+
+                // Get report header before consuming blob
+                const reportHeader = decodeURIComponent(res.headers.get('X-Report-Header') || '');
+                document.getElementById('report-content').textContent = reportHeader;
+                document.getElementById('report-section').style.display = 'block';
+
+                // Download ZIP
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `processed_${new Date().getTime()}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+            } catch (e) {
+                alert(t.alert_error + e.message);
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = t.btn_start; // Revert to "Start" in correct lang via data-i18n if needed, but simple reset works
+                updateLanguage(currentLang); // Ensure text is correct
+            }
+        });
+    </script>
+</body>
+</html>

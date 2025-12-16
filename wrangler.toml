@@ -1,0 +1,10 @@
+name = "excel-replacer-hono"
+compatibility_date = "2024-04-05"
+
+# 指定 Cloudflare Pages 的构建输出目录
+# 我们的静态文件在 public 文件夹，编译后的 _worker.js 也会放在这里
+pages_build_output_dir = "./public"
+
+# 如果你需要设置环境变量（例如 API 密钥），可以在这里添加
+# [vars]
+# API_KEY = "your-secret-key"
