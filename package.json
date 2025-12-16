@@ -1,8 +1,10 @@
+
 {
   "name": "excel-replacer-hono",
+  "version": "1.0.0",
   "scripts": {
     "dev": "wrangler pages dev public",
-    "build": "wrangler pages functions build --outdir public --plugin ./src/index.ts",
+    "build": "esbuild src/index.ts --bundle --outfile=public/_worker.js --format=esm --platform=browser",
     "deploy": "npm run build && wrangler pages deploy public"
   },
   "dependencies": {
@@ -12,6 +14,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
-    "wrangler": "^3.0.0"
+    "wrangler": "^3.0.0",
+    "esbuild": "^0.20.0"
   }
 }
