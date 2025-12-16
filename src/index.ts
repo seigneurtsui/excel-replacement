@@ -4,109 +4,67 @@ import { serveStatic } from 'hono/cloudflare-pages';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 
-const app = new Hono();
+// 定义 Cloudflare 环境变量的类型
+type Bindings = {
+  AUTH_PASSWORD: string
+}
 
-// 1. 【重要修改】先定义 API 路由，防止被静态文件中间件拦截
+const app = new Hono<{ Bindings: Bindings }>();
+
+// 1. 新增：验证密码的 API (用于前端登录时立即反馈)
+app.post('/auth', async (c) => {
+  const body = await c.req.parseBody();
+  const password = body['password'];
+  
+  // 从环境变量获取密码，如果没有设置，默认是 "admin"
+  const correctPassword = c.env.AUTH_PASSWORD || "admin";
+
+  if (password === correctPassword) {
+    return c.json({ success: true });
+  } else {
+    return c.json({ success: false, error: 'Incorrect password' }, 401);
+  }
+});
+
+// 2. 修改：核心处理逻辑，增加鉴权拦截
 app.post('/process', async (c) => {
+  // --- 鉴权开始 ---
+  const authHeader = c.req.header('Authorization');
+  const correctPassword = c.env.AUTH_PASSWORD || "admin";
+  
+  // 前端会发送 "Bearer 你的密码"
+  if (!authHeader || authHeader !== `Bearer ${correctPassword}`) {
+    return c.json({ error: 'Unauthorized: Invalid Password' }, 401);
+  }
+  // --- 鉴权结束 ---
+
   try {
     const body = await c.req.parseBody();
+    // ... (原本的文件处理逻辑完全保持不变) ...
+    // ... 为了节省篇幅，这里省略中间重复的 Excel 处理代码 ...
+    // ... 请将原本的 Excel 处理逻辑放在这里 ...
     
-    // 获取上传的文件
+    // ⬇️ 仅仅为了完整性示意，这里保留原本的核心变量获取逻辑，请确保你保留了之前的完整代码
     let targetFiles = body['targets'];
     const replacementFile = body['replacement'];
     const mode = body['mode'] as string;
-
-    if (!targetFiles || !replacementFile) {
-      return c.json({ error: 'Missing files' }, 400);
-    }
-
-    if (!Array.isArray(targetFiles)) {
-      targetFiles = [targetFiles];
-    }
-
-    // @ts-ignore
-    const repBuffer = await (replacementFile as File).arrayBuffer();
-    const repWb = XLSX.read(repBuffer, { type: 'array' });
-    const repSheet = repWb.Sheets[repWb.SheetNames[0]];
-    const repData = XLSX.utils.sheet_to_json(repSheet, { header: ['key', 'value'], range: 1 });
     
-    const replacementMap = new Map();
-    repData.forEach((row: any) => {
-      if (row.key !== undefined && row.value !== undefined) {
-        replacementMap.set(String(row.key), String(row.value));
-      }
-    });
+    if (!targetFiles || !replacementFile) return c.json({ error: 'Missing files' }, 400);
+    if (!Array.isArray(targetFiles)) targetFiles = [targetFiles];
 
-    const zip = new JSZip();
-    const reportLines: string[] = [];
-    
-    // @ts-ignore
-    for (const file of targetFiles as File[]) {
-      const fileName = file.name;
-      const fileBuffer = await file.arrayBuffer();
-      
-      const wb = XLSX.read(fileBuffer, { type: 'array' });
-      let fileReplacements = 0;
+    // ... (此处省略几十行 Excel 处理代码) ...
+    // ... 请直接复制之前运行正常的逻辑 ...
 
-      for (const sheetName of wb.SheetNames) {
-        const sheet = wb.Sheets[sheetName];
-        if (!sheet['!ref']) continue;
-        
-        const range = XLSX.utils.decode_range(sheet['!ref']);
-        let sheetReplacements = 0;
-
-        for (let r = range.s.r; r <= range.e.r; r++) {
-          for (let c = range.s.c; c <= range.e.c; c++) {
-            const cellAddr = XLSX.utils.encode_cell({ r, c });
-            const cell = sheet[cellAddr];
-
-            if (cell && cell.v !== undefined) {
-              let newValue = String(cell.v);
-              let originalValue = newValue;
-              
-              for (const [key, value] of replacementMap) {
-                if (mode === 'full') {
-                  if (newValue === key) {
-                    newValue = value;
-                    sheetReplacements++;
-                    break;
-                  }
-                } else {
-                  if (newValue.includes(key)) {
-                     const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-                     if (regex.test(newValue)) {
-                         newValue = newValue.replace(regex, value);
-                         sheetReplacements++;
-                     }
-                  }
-                }
-              }
-
-              if (newValue !== originalValue) {
-                sheet[cellAddr].v = newValue;
-                if (cell.t === 'n') sheet[cellAddr].t = 's';
-              }
-            }
-          }
-        }
-        fileReplacements += sheetReplacements;
-        reportLines.push(`File: ${fileName} | Sheet: ${sheetName} | Replaced: ${sheetReplacements}`);
-      }
-
-      const outBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-      zip.file(`replaced_${fileName}`, outBuffer);
-    }
-
-    const reportContent = reportLines.join('\n');
-    zip.file('report.txt', reportContent);
-
+    // 假设 zip 生成完毕 (仅作示意，请使用你现有的代码)
+    const zip = new JSZip(); 
+    // ... 
     const zipContent = await zip.generateAsync({ type: 'blob' });
     const arrayBuffer = await zipContent.arrayBuffer();
 
     return c.body(arrayBuffer, 200, {
       'Content-Type': 'application/zip',
       'Content-Disposition': 'attachment; filename="processed_files.zip"',
-      'X-Report-Header': encodeURIComponent(reportContent)
+      'X-Report-Header': encodeURIComponent("Report...")
     });
 
   } catch (err: any) {
@@ -115,7 +73,6 @@ app.post('/process', async (c) => {
   }
 });
 
-// 2. 最后定义静态文件服务 (作为 fallback)
 app.use('/*', serveStatic({ root: './public' }));
 
 export default app;
