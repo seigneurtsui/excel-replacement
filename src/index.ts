@@ -1,3 +1,4 @@
+
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-pages';
 import * as XLSX from 'xlsx';
@@ -5,16 +6,12 @@ import JSZip from 'jszip';
 
 const app = new Hono();
 
-// 1. 提供静态资源 (前端页面)
-app.use('/*', serveStatic({ root: './public' }));
-
-// 2. 处理 Excel 替换的核心 API
+// 1. 【重要修改】先定义 API 路由，防止被静态文件中间件拦截
 app.post('/process', async (c) => {
   try {
     const body = await c.req.parseBody();
     
     // 获取上传的文件
-    // Hono parseBody 对多文件上传的处理：如果是多个同名文件，会返回数组
     let targetFiles = body['targets'];
     const replacementFile = body['replacement'];
     const mode = body['mode'] as string;
@@ -23,13 +20,11 @@ app.post('/process', async (c) => {
       return c.json({ error: 'Missing files' }, 400);
     }
 
-    // 规范化 targets，确保它是数组
     if (!Array.isArray(targetFiles)) {
       targetFiles = [targetFiles];
     }
 
-    // --- 读取对照表 (Replacement Map) ---
-    // @ts-ignore: Hono types for file can be explicitly cast or handled
+    // @ts-ignore
     const repBuffer = await (replacementFile as File).arrayBuffer();
     const repWb = XLSX.read(repBuffer, { type: 'array' });
     const repSheet = repWb.Sheets[repWb.SheetNames[0]];
@@ -42,11 +37,10 @@ app.post('/process', async (c) => {
       }
     });
 
-    // --- 准备 ZIP 文件 ---
     const zip = new JSZip();
     const reportLines: string[] = [];
     
-    // --- 处理目标文件 ---
+    // @ts-ignore
     for (const file of targetFiles as File[]) {
       const fileName = file.name;
       const fileBuffer = await file.arrayBuffer();
@@ -75,12 +69,10 @@ app.post('/process', async (c) => {
                   if (newValue === key) {
                     newValue = value;
                     sheetReplacements++;
-                    break; // 完全匹配找到后即可跳出
+                    break;
                   }
                 } else {
-                  // 部分匹配
                   if (newValue.includes(key)) {
-                     // 使用正则全局替换，注意转义特殊字符
                      const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
                      if (regex.test(newValue)) {
                          newValue = newValue.replace(regex, value);
@@ -92,7 +84,6 @@ app.post('/process', async (c) => {
 
               if (newValue !== originalValue) {
                 sheet[cellAddr].v = newValue;
-                // 如果原来是数字类型，修改后改为字符串类型，避免 Excel 报错
                 if (cell.t === 'n') sheet[cellAddr].t = 's';
               }
             }
@@ -102,25 +93,20 @@ app.post('/process', async (c) => {
         reportLines.push(`File: ${fileName} | Sheet: ${sheetName} | Replaced: ${sheetReplacements}`);
       }
 
-      // 将修改后的 Excel 写入 Buffer
       const outBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-      
-      // 添加到 ZIP
       zip.file(`replaced_${fileName}`, outBuffer);
     }
 
-    // --- 添加报告到 ZIP ---
     const reportContent = reportLines.join('\n');
     zip.file('report.txt', reportContent);
 
-    // --- 生成 ZIP 并返回 ---
     const zipContent = await zip.generateAsync({ type: 'blob' });
     const arrayBuffer = await zipContent.arrayBuffer();
 
     return c.body(arrayBuffer, 200, {
       'Content-Type': 'application/zip',
       'Content-Disposition': 'attachment; filename="processed_files.zip"',
-      'X-Report-Header': encodeURIComponent(reportContent) // 通过 Header 传递简要报告给前端展示
+      'X-Report-Header': encodeURIComponent(reportContent)
     });
 
   } catch (err: any) {
@@ -128,5 +114,8 @@ app.post('/process', async (c) => {
     return c.json({ error: err.message }, 500);
   }
 });
+
+// 2. 最后定义静态文件服务 (作为 fallback)
+app.use('/*', serveStatic({ root: './public' }));
 
 export default app;
