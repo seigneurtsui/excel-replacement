@@ -118,9 +118,9 @@
 
     <script>
         // --- 更新：i18n 字典，增加登录相关词条 ---
+       // --- 修正后的完整 i18n 字典 ---
         const translations = {
             'zh-CN': {
-                // ...原有...
                 title: "Excel批量字符替换工具", subtitle: "高效批量处理Excel文档中的字符替换任务",
                 target_files: "目标Excel文档", drag_drop: "点击或拖拽上传文件", formats: "支持 .xls 和 .xlsx",
                 replacement_map: "替换对照表", drag_drop_map: "点击或拖拽上传对照表文件", map_format: "格式：A列 (key)，B列 (value)",
@@ -128,41 +128,98 @@
                 btn_start: "开始替换", btn_processing: "处理中...",
                 report_title: "处理报告", download_tip: "处理后的文件和完整报告已打包下载。",
                 alert_missing: "请上传目标文件和对照表", alert_error: "处理失败: ",
-                // ...新增登录...
                 login_title: "需要访问密码", login_btn: "登录", login_err: "密码错误", login_ph: "请输入密码"
             },
             'zh-TW': {
                 title: "Excel批量字符替換工具", subtitle: "高效批量處理Excel文檔中的字符替換任務",
-                // ...原有...
                 target_files: "目標Excel文檔", drag_drop: "點擊或拖拽上傳文件", formats: "支持 .xls 和 .xlsx",
                 replacement_map: "替換對照表", drag_drop_map: "點擊或拖拽上傳對照表文件", map_format: "格式：A列 (key)，B列 (value)",
                 mode: "匹配模式", mode_full: "完全匹配 - 單元格內容完全相等", mode_partial: "部分匹配 - 包含關鍵字即替換",
                 btn_start: "開始替換", btn_processing: "處理中...",
                 report_title: "處理報告", download_tip: "處理後的文件和完整報告已打包下載。",
                 alert_missing: "請上傳目標文件和對照表", alert_error: "處理失敗: ",
-                // ...新增...
                 login_title: "需要訪問密碼", login_btn: "登錄", login_err: "密碼錯誤", login_ph: "請輸入密碼"
             },
             'en': {
                 title: "Excel Batch Replacer", subtitle: "Efficiently batch replace text in multiple Excel files.",
-                // ...原有...
                 target_files: "Target Excel Files", drag_drop: "Click or drag & drop files here", formats: "Supports .xls and .xlsx",
                 replacement_map: "Replacement Map", drag_drop_map: "Click or drag & drop the map file", map_format: "Format: Col A (key), Col B (value)",
                 mode: "Match Mode", mode_full: "Full Match (Exact Cell Content)", mode_partial: "Partial Match (Contains Keyword)",
                 btn_start: "Start Processing", btn_processing: "Processing...",
                 report_title: "Processing Report", download_tip: "The processed files and full report have been downloaded as a ZIP file.",
                 alert_missing: "Please upload target files and replacement map", alert_error: "Error: ",
-                // ...新增...
                 login_title: "Login Required", login_btn: "Login", login_err: "Incorrect password", login_ph: "Enter password"
             },
-            // ... (其他语言请按照此格式增加 login_title, login_btn, login_err, login_ph) ...
-            'fr': { login_title: "Connexion requise", login_btn: "Connexion", login_err: "Mot de passe incorrect", login_ph: "Entrer le mot de passe", title: "Remplacement Excel", subtitle: "...", target_files: "Fichiers Cibles", drag_drop: "Cliquez ici", formats: ".xls .xlsx", replacement_map: "Carte", drag_drop_map: "Cliquez ici", map_format: "Col A/B", mode: "Mode", mode_full: "Exacte", mode_partial: "Partielle", btn_start: "Commencer", btn_processing: "Traitement...", report_title: "Rapport", download_tip: "Téléchargé.", alert_missing: "Manquant", alert_error: "Erreur: " },
-            'es': { login_title: "Inicio de sesión", login_btn: "Entrar", login_err: "Contraseña incorrecta", login_ph: "Contraseña", title: "Reemplazo Excel", subtitle: "...", target_files: "Archivos", drag_drop: "Clic aquí", formats: ".xls .xlsx", replacement_map: "Mapa", drag_drop_map: "Clic aquí", map_format: "Col A/B", mode: "Modo", mode_full: "Exacta", mode_partial: "Parcial", btn_start: "Iniciar", btn_processing: "Procesando...", report_title: "Informe", download_tip: "Descargado.", alert_missing: "Faltan archivos", alert_error: "Error: " },
-            'pt': { login_title: "Login Necessário", login_btn: "Entrar", login_err: "Senha incorreta", login_ph: "Digite a senha", title: "Substituição Excel", subtitle: "...", target_files: "Arquivos", drag_drop: "Clique aqui", formats: ".xls .xlsx", replacement_map: "Mapa", drag_drop_map: "Clique aqui", map_format: "Col A/B", mode: "Modo", mode_full: "Exata", mode_partial: "Parcial", btn_start: "Iniciar", btn_processing: "Processando...", report_title: "Relatório", download_tip: "Baixado.", alert_missing: "Arquivos ausentes", alert_error: "Erro: " },
-            'it': { login_title: "Accesso Richiesto", login_btn: "Login", login_err: "Password errata", login_ph: "Inserisci password", title: "Sostituzione Excel", subtitle: "...", target_files: "File", drag_drop: "Clicca qui", formats: ".xls .xlsx", replacement_map: "Mappa", drag_drop_map: "Clicca qui", map_format: "Col A/B", mode: "Modo", mode_full: "Esatta", mode_partial: "Parziale", btn_start: "Inizia", btn_processing: "Elaborazione...", report_title: "Rapporto", download_tip: "Scaricato.", alert_missing: "File mancanti", alert_error: "Errore: " },
-            'de': { login_title: "Anmeldung erforderlich", login_btn: "Anmelden", login_err: "Falsches Passwort", login_ph: "Passwort eingeben", title: "Excel Ersetzen", subtitle: "...", target_files: "Dateien", drag_drop: "Hier klicken", formats: ".xls .xlsx", replacement_map: "Karte", drag_drop_map: "Hier klicken", map_format: "Col A/B", mode: "Modus", mode_full: "Exakt", mode_partial: "Teilweise", btn_start: "Starten", btn_processing: "Verarbeitung...", report_title: "Bericht", download_tip: "Heruntergeladen.", alert_missing: "Dateien fehlen", alert_error: "Fehler: " },
-            'ru': { login_title: "Требуется вход", login_btn: "Войти", login_err: "Неверный пароль", login_ph: "Введите пароль", title: "Замена Excel", subtitle: "...", target_files: "Файлы", drag_drop: "Нажмите здесь", formats: ".xls .xlsx", replacement_map: "Карта", drag_drop_map: "Нажмите здесь", map_format: "Col A/B", mode: "Режим", mode_full: "Точное", mode_partial: "Частичное", btn_start: "Начать", btn_processing: "Обработка...", report_title: "Отчет", download_tip: "Скачано.", alert_missing: "Нет файлов", alert_error: "Ошибка: " },
-            'ja': { login_title: "ログインが必要です", login_btn: "ログイン", login_err: "パスワードが違います", login_ph: "パスワードを入力", title: "Excel置換", subtitle: "...", target_files: "ファイル", drag_drop: "ここをクリック", formats: ".xls .xlsx", replacement_map: "対応表", drag_drop_map: "ここをクリック", map_format: "A列/B列", mode: "モード", mode_full: "完全", mode_partial: "部分", btn_start: "開始", btn_processing: "処理中...", report_title: "レポート", download_tip: "ダウンロード完了。", alert_missing: "ファイル不足", alert_error: "エラー: " }
+            'fr': {
+                title: "Remplacement Excel par Lots", subtitle: "Remplacez efficacement du texte dans plusieurs fichiers Excel.",
+                target_files: "Fichiers Excel Cibles", drag_drop: "Cliquez ou glissez-déposez ici", formats: "Supporte .xls et .xlsx",
+                replacement_map: "Table de Correspondance", drag_drop_map: "Cliquez ou glissez-déposez le fichier", map_format: "Format : Col A (key), Col B (value)",
+                mode: "Mode de Correspondance", mode_full: "Correspondance Exacte", mode_partial: "Correspondance Partielle",
+                btn_start: "Commencer", btn_processing: "Traitement...",
+                report_title: "Rapport", download_tip: "Les fichiers traités ont été téléchargés sous forme d'archive ZIP.",
+                alert_missing: "Veuillez télécharger les fichiers cibles et la carte", alert_error: "Erreur : ",
+                login_title: "Connexion requise", login_btn: "Connexion", login_err: "Mot de passe incorrect", login_ph: "Entrer le mot de passe"
+            },
+            'es': {
+                title: "Reemplazo por Lotes de Excel", subtitle: "Reemplace texto en múltiples archivos Excel eficientemente.",
+                target_files: "Archivos Excel Objetivo", drag_drop: "Haga clic o arrastre archivos aquí", formats: "Soporta .xls y .xlsx",
+                replacement_map: "Mapa de Reemplazo", drag_drop_map: "Haga clic o arrastre el archivo de mapa", map_format: "Formato: Col A (key), Col B (value)",
+                mode: "Modo de Coincidencia", mode_full: "Coincidencia Exacta", mode_partial: "Coincidencia Parcial",
+                btn_start: "Iniciar Proceso", btn_processing: "Procesando...",
+                report_title: "Informe", download_tip: "Los archivos procesados se han descargado como un archivo ZIP.",
+                alert_missing: "Cargue los archivos de destino y el mapa", alert_error: "Error: ",
+                login_title: "Inicio de sesión", login_btn: "Entrar", login_err: "Contraseña incorrecta", login_ph: "Contraseña"
+            },
+            'pt': {
+                title: "Substituição em Lote Excel", subtitle: "Substitua texto em vários arquivos Excel com eficiência.",
+                target_files: "Arquivos Excel Alvo", drag_drop: "Clique ou arraste arquivos aqui", formats: "Suporta .xls e .xlsx",
+                replacement_map: "Mapa de Substituição", drag_drop_map: "Clique ou arraste o arquivo de mapa", map_format: "Formato: Col A (key), Col B (value)",
+                mode: "Modo de Correspondência", mode_full: "Correspondência Exata", mode_partial: "Correspondência Parcial",
+                btn_start: "Iniciar Processo", btn_processing: "Processando...",
+                report_title: "Relatório", download_tip: "Os arquivos processados foram baixados como um arquivo ZIP.",
+                alert_missing: "Faça upload dos arquivos de destino e do mapa", alert_error: "Erro: ",
+                login_title: "Login Necessário", login_btn: "Entrar", login_err: "Senha incorreta", login_ph: "Digite a senha"
+            },
+            'it': {
+                title: "Sostituzione Batch Excel", subtitle: "Sostituisci testo in più file Excel in modo efficiente.",
+                target_files: "File Excel di Destinazione", drag_drop: "Clicca o trascina i file qui", formats: "Supporta .xls e .xlsx",
+                replacement_map: "Mappa di Sostituzione", drag_drop_map: "Clicca o trascina il file mappa", map_format: "Formato: Col A (key), Col B (value)",
+                mode: "Modalità Corrispondenza", mode_full: "Corrispondenza Esatta", mode_partial: "Corrispondenza Parziale",
+                btn_start: "Inizia Processo", btn_processing: "Elaborazione...",
+                report_title: "Rapporto", download_tip: "I file elaborati sono stati scaricati come file ZIP.",
+                alert_missing: "Carica i file di destinazione e la mappa", alert_error: "Errore: ",
+                login_title: "Accesso Richiesto", login_btn: "Login", login_err: "Password errata", login_ph: "Inserisci password"
+            },
+            'de': {
+                title: "Excel Batch Ersetzen", subtitle: "Ersetzen Sie Text in mehreren Excel-Dateien effizient.",
+                target_files: "Ziel-Excel-Dateien", drag_drop: "Klicken oder Dateien hierher ziehen", formats: "Unterstützt .xls und .xlsx",
+                replacement_map: "Ersetzungstabelle", drag_drop_map: "Klicken oder Tabellendatei hierher ziehen", map_format: "Format: Spalte A (key), Spalte B (value)",
+                mode: "Übereinstimmungsmodus", mode_full: "Genaue Übereinstimmung", mode_partial: "Teilweise Übereinstimmung",
+                btn_start: "Starten", btn_processing: "Verarbeitung...",
+                report_title: "Bericht", download_tip: "Die verarbeiteten Dateien wurden als ZIP heruntergeladen.",
+                alert_missing: "Bitte laden Sie Zieldateien und Karte hoch", alert_error: "Fehler: ",
+                login_title: "Anmeldung erforderlich", login_btn: "Anmelden", login_err: "Falsches Passwort", login_ph: "Passwort eingeben"
+            },
+            'ru': {
+                title: "Пакетная замена в Excel", subtitle: "Эффективная замена текста в нескольких файлах Excel.",
+                target_files: "Целевые файлы Excel", drag_drop: "Нажмите или перетащите файлы сюда", formats: "Поддерживает .xls и .xlsx",
+                replacement_map: "Таблица замен", drag_drop_map: "Нажмите или перетащите файл таблицы", map_format: "Формат: Столбец A (key), Столбец B (value)",
+                mode: "Режим совпадения", mode_full: "Полное совпадение", mode_partial: "Частичное совпадение",
+                btn_start: "Начать", btn_processing: "Обработка...",
+                report_title: "Отчет", download_tip: "Обработанные файлы были загружены как ZIP-архив.",
+                alert_missing: "Пожалуйста, загрузите целевые файлы и карту", alert_error: "Ошибка: ",
+                login_title: "Требуется вход", login_btn: "Войти", login_err: "Неверный пароль", login_ph: "Введите пароль"
+            },
+            'ja': {
+                title: "Excel一括置換ツール", subtitle: "複数のExcelファイル内のテキストを効率的に一括置換します。",
+                target_files: "対象Excelファイル", drag_drop: "ここをクリックするかファイルをドロップ", formats: ".xls および .xlsx をサポート",
+                replacement_map: "置換対応表", drag_drop_map: "ここをクリックするか対応表をドロップ", map_format: "形式: A列 (key), B列 (value)",
+                mode: "一致モード", mode_full: "完全一致（セル内容が完全に一致）", mode_partial: "部分一致（キーワードを含む）",
+                btn_start: "処理開始", btn_processing: "処理中...",
+                report_title: "処理レポート", download_tip: "処理済みファイルとレポートがZIP形式でダウンロードされました。",
+                alert_missing: "対象ファイルと対応表をアップロードしてください", alert_error: "エラー: ",
+                login_title: "ログインが必要です", login_btn: "ログイン", login_err: "パスワードが違います", login_ph: "パスワードを入力"
+            }
         };
 
         // ... (上传文件逻辑 setupUpload, handleFiles 等保持不变) ...
